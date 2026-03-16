@@ -15,6 +15,7 @@ import {
 import { taskManager, type CreateTask } from '@/schemas/task'
 import { computed, ref, type Ref } from 'vue'
 import z from 'zod'
+import BaseView from './BaseView.vue'
 
 // interface Emits {
 //   (e: 'addTask', task: CreateTask): void
@@ -139,9 +140,8 @@ function onConfirm() {
 </script>
 
 <template>
-  <div class="w-full pt-4">
-    <div class="text-2xl font-semibold text-center pt-2 pb-5">Create Task</div>
-    <div class="flex flex-col gap-4">
+  <BaseView title="Create Task">
+    <div class="flex flex-col gap-4 w-1/2 mx-auto pb-4">
       <div class="flex flex-col gap-4 sm:flex-row">
         <input
           ref="inputRef"
@@ -205,12 +205,12 @@ function onConfirm() {
         <span>Remember Options</span>
       </label>
     </div>
-  </div>
-  <div class="flex justify-center">
-    <button class="btn btn-outline" @click="">Cancel</button>
-    <div class="px-4"></div>
-    <button class="btn btn-success" @click="onConfirm">
-      <slot name="confirm"> Create </slot>
-    </button>
-  </div>
+    <div class="flex justify-center">
+      <button class="btn btn-outline" @click="">Cancel</button>
+      <div class="px-4"></div>
+      <button class="btn btn-success" @click="onConfirm">
+        <slot name="confirm"> Create </slot>
+      </button>
+    </div>
+  </BaseView>
 </template>

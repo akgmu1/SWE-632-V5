@@ -13,6 +13,7 @@ import { taskManager } from '@/schemas/task'
 import { PencilIcon } from '@heroicons/vue/24/outline'
 import { TrashIcon } from '@heroicons/vue/24/solid'
 import { computed, ref, type Ref } from 'vue'
+import BaseView from './BaseView.vue'
 
 // interface Emits {
 //   (e: 'updateCategory', category: Category): void
@@ -60,8 +61,11 @@ const canConfirm = computed(() => name.value.trim().length > 0)
 </script>
 
 <template>
-  <BaseModal ref="modalRef" title="Manage Categories">
-    <div v-if="categories.length > PERM_CATEGORIES.length" class="flex flex-col gap-2">
+  <BaseView title="Manage Categories">
+    <div
+      v-if="categories.length > PERM_CATEGORIES.length"
+      class="flex flex-col gap-2 w-1/2 mx-auto"
+    >
       <div v-for="c in categories" :key="c.id">
         <div v-if="!PERM_CATEGORIES.some((x) => x === c.id)" class="flex justify-between">
           <div class="flex gap-2 align-middle">
@@ -150,5 +154,5 @@ const canConfirm = computed(() => name.value.trim().length > 0)
 
       <template #confirm> Delete </template>
     </ConfirmationModal>
-  </BaseModal>
+  </BaseView>
 </template>

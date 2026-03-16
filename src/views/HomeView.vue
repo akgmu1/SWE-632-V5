@@ -12,6 +12,7 @@ import { categoryManager, type Category } from '@/schemas/category'
 import { deletedTaskManager, taskManager, type CreateTask, type Task } from '@/schemas/task'
 import { timeEntryManager, type CreateTimeEntry } from '@/schemas/timeEntry'
 import { computed, ref, type Ref } from 'vue'
+import BaseView from './BaseView.vue'
 
 const logTimeModalRef: Ref<InstanceType<typeof LogTimeModal> | null> = ref(null)
 
@@ -147,10 +148,21 @@ interface Props {
 
 const props = defineProps<Props>()
 // const homeState: Ref<HomeState> = ref(HomeState.Default)
+
+const baseViewTitle = computed(() => {
+  switch (props.state) {
+    case HomeState.Default:
+      return 'Home'
+    case HomeState.Update:
+      return 'Edit Task'
+    case HomeState.Delete:
+      return 'Delete Task'
+  }
+})
 </script>
 
 <template>
-  <main class="container mx-auto py-4">
+  <BaseView :title="baseViewTitle">
     <div class="mb-4 flex justify-center">
       <SearchBar v-model="search" />
     </div>
@@ -261,5 +273,5 @@ const props = defineProps<Props>()
       <template #confirm> Recover </template>
     </ConfirmationModal>
     <LogTimeModal ref="logTimeModalRef" @log-time="logTime" />
-  </main>
+  </BaseView>
 </template>

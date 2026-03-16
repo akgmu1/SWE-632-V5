@@ -2,6 +2,7 @@
 import { dateTrim } from '@/helper'
 import { DEFAULT_CATEGORY } from '@/schemas/category'
 import { taskManager, type CreateTask } from '@/schemas/task'
+import BaseView from './BaseView.vue'
 
 function showToast() {
   const toast = document.getElementById('my-toast')!
@@ -47,17 +48,19 @@ function addTestTasks() {
 </script>
 
 <template>
-  <div class="container mx-auto flex flex-col gap-2 pt-4">
-    <div>
-      <RouterLink to="/" class="btn btn-primary">Go Back Home</RouterLink>
+  <BaseView title="Debug">
+    <div class="flex flex-col gap-2">
+      <div>
+        <RouterLink to="/" class="btn btn-primary">Go Back Home</RouterLink>
+      </div>
+      <div>
+        <button @click="resetTasks" class="btn btn-primary">Reset tasks</button>
+      </div>
+      <div>
+        <button @click="addTestTasks" class="btn btn-primary">Add test tasks</button>
+      </div>
     </div>
-    <div>
-      <button @click="resetTasks" class="btn btn-primary">Reset tasks</button>
-    </div>
-    <div>
-      <button @click="addTestTasks" class="btn btn-primary">Add test tasks</button>
-    </div>
-  </div>
+  </BaseView>
   <div id="my-toast" class="toast toast-center toast-middle hidden">
     <div class="alert alert-info">
       <span>Done</span>

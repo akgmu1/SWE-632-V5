@@ -18,6 +18,7 @@ import {
 } from 'chart.js'
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import { Doughnut } from 'vue-chartjs'
+import BaseView from './BaseView.vue'
 
 const selectedDate: Ref<Date> = ref(dateTrim(new Date()))
 watch(selectedDate, () => {
@@ -155,47 +156,49 @@ watch(showAll, (value) => {
 </script>
 
 <template>
-  <div v-if="timeEntries.length > 0" class="flex">
-    <Doughnut :data="chartData" :options="chartOptions" />
-  </div>
-
-  <div class="flex justify-between mt-5">
-    <label class="label">
-      <input type="checkbox" v-model="showAll" class="checkbox" />
-      Show All
-    </label>
-    <label v-if="!showAll" class="input">
-      <span class="label">Selected Date</span>
-      <input
-        type="date"
-        :value="dateToYYYYMMDD(selectedDate)"
-        @input="
-          selectedDate = dateTrim(
-            ($event.target as HTMLInputElement).valueAsDate ?? new Date(),
-            true,
-          )
-        "
-      />
-    </label>
-  </div>
-
-  <hr class="my-2" />
-
-  <div v-if="timeEntries.length > 0">
-    <div class="mt-5">
-      Total:
-      <span class="badge badge-neutral">{{ totalHoursLabel }} worked</span>
+  <BaseView title="Statistics">
+    <div v-if="timeEntries.length > 0" class="flex">
+      <Doughnut :data="chartData" :options="chartOptions" />
     </div>
 
-    <div class="flex flex-col gap-2 mt-5">
-      <div v-for="t in tasks" :key="t.id">
-        <div class="flex gap-2">
-          <CategoryColor :category="categoryManager.findBy('id', t.category)" />
-          <div>Task: {{ t.title }}</div>
-          <div class="badge badge-neutral">{{ computeHoursLabel(t) }} worked</div>
+    <div class="flex justify-between mt-5">
+      <label class="label">
+        <input type="checkbox" v-model="showAll" class="checkbox" />
+        Show All
+      </label>
+      <label v-if="!showAll" class="input">
+        <span class="label">Selected Date</span>
+        <input
+          type="date"
+          :value="dateToYYYYMMDD(selectedDate)"
+          @input="
+            selectedDate = dateTrim(
+              ($event.target as HTMLInputElement).valueAsDate ?? new Date(),
+              true,
+            )
+          "
+        />
+      </label>
+    </div>
+
+    <hr class="my-2" />
+
+    <div v-if="timeEntries.length > 0">
+      <div class="mt-5">
+        Total:
+        <span class="badge badge-neutral">{{ totalHoursLabel }} worked</span>
+      </div>
+
+      <div class="flex flex-col gap-2 mt-5">
+        <div v-for="t in tasks" :key="t.id">
+          <div class="flex gap-2">
+            <CategoryColor :category="categoryManager.findBy('id', t.category)" />
+            <div>Task: {{ t.title }}</div>
+            <div class="badge badge-neutral">{{ computeHoursLabel(t) }} worked</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div v-else>No hours logged</div>
+    <div v-else>No hours logged</div>
+  </BaseView>
 </template>
