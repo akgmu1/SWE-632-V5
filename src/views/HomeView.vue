@@ -155,61 +155,69 @@ const props = defineProps<Props>()
       <SearchBar v-model="search" />
     </div>
 
-    <!-- List of tasks working on -->
-    <div class="text-xl">Active</div>
-    <hr class="my-2" />
-    <div class="flex flex-col gap-2">
-      <TaskItem
-        v-for="task in activeTasks"
-        :key="task.id"
-        :task="task"
-        :home-state="props.state"
-        :is-deleted="false"
-        @toggle="toggleTask"
-        @clicked="taskClicked"
-        @logTimeClicked="openLogTime"
-      />
-    </div>
-
-    <!-- List of completed tasks -->
-    <div class="mt-10 text-xl">Completed</div>
-    <hr class="my-2" />
-    <div class="flex flex-col gap-2">
-      <TaskItem
-        v-for="task in completedTasks"
-        :key="task.id"
-        :task="task"
-        :home-state="props.state"
-        :is-deleted="false"
-        @toggle="toggleTask"
-        @clicked="taskClicked"
-      />
-    </div>
-
-    <!-- List of recently deleted tasks -->
-    <div v-if="props.state === HomeState.Delete">
-      <div class="mt-10 flex justify-between">
-        <!-- TODO: mt-3 may not be correct here... -->
-        <div class="text-xl" :class="{ 'mt-3': deletedTasks.length > 0 }">Recently Deleted</div>
-        <button
-          v-if="deletedTasks.length > 0"
-          class="btn btn-accent"
-          @click="confirmClearRecentlyDeleteModalRef!.showModal"
-        >
-          Clear
-        </button>
+    <div class="tabs tabs-lift">
+      <input type="radio" name="task_tabs" class="tab" aria-label="Active" checked />
+      <div class="tab-content border-base-300 bg-base-100 p-3">
+        <div class="flex flex-col gap-2">
+          <TaskItem
+            v-for="task in activeTasks"
+            :key="task.id"
+            :task="task"
+            :home-state="props.state"
+            :is-deleted="false"
+            @toggle="toggleTask"
+            @clicked="taskClicked"
+            @logTimeClicked="openLogTime"
+          />
+        </div>
       </div>
-      <hr class="my-2" />
-      <div class="flex flex-col gap-2">
-        <TaskItem
-          v-for="task in filteredDeletedTasks"
-          :key="task.id"
-          :task="task"
-          :home-state="props.state"
-          :is-deleted="true"
-          @clicked="taskClicked"
-        />
+
+      <input type="radio" name="task_tabs" class="tab" aria-label="Completed" />
+      <div class="tab-content border-base-300 bg-base-100 p-3">
+        <div class="flex flex-col gap-2">
+          <TaskItem
+            v-for="task in completedTasks"
+            :key="task.id"
+            :task="task"
+            :home-state="props.state"
+            :is-deleted="false"
+            @toggle="toggleTask"
+            @clicked="taskClicked"
+          />
+        </div>
       </div>
+
+      <template v-if="props.state === HomeState.Delete">
+        <input type="radio" name="task_tabs" class="tab" aria-label="Deleted" />
+        <div class="tab-content border-base-300 bg-base-100 p-3">
+          <div class="flex justify-center align-middle pb-2">
+            <!-- TODO: mt-3 may not be correct here... -->
+            <div class="text-xl" :class="{ 'mt-2 pr-5': deletedTasks.length > 0 }">
+              Recently Deleted {{ deletedTasks.length }}
+              {{ deletedTasks.length === 1 ? 'Task' : 'Task' }}
+            </div>
+            <button
+              v-if="deletedTasks.length > 0"
+              class="btn btn-accent"
+              @click="confirmClearRecentlyDeleteModalRef!.showModal"
+            >
+              Clear
+            </button>
+          </div>
+          <div class="flex flex-col gap-2">
+            <TaskItem
+              v-for="task in filteredDeletedTasks"
+              :key="task.id"
+              :task="task"
+              :home-state="props.state"
+              :is-deleted="true"
+              @clicked="taskClicked"
+            />
+          </div>
+        </div>
+      </template>
+      <!-- <input type="radio" name="task_tabs" class="tab" aria-label="Tab 3" />
+      <div class="tab-content border-base-300 bg-base-100 p-10">Tab content 3</div> -->
     </div>
 
     <!-- Statistics -->
