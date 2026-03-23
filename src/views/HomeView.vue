@@ -6,6 +6,7 @@ import TaskItem from '@/components/TaskItem.vue'
 import UpdateTaskModal from '@/components/UpdateTaskModal.vue'
 import { HomeState } from '@/enums'
 import { SortOption, sortTasks } from '@/helper'
+import { notify } from '@/notification'
 import { categoryManager, type Category } from '@/schemas/category'
 import { deletedTaskManager, taskManager, type Task } from '@/schemas/task'
 import { timeEntryManager, type CreateTimeEntry } from '@/schemas/timeEntry'
@@ -69,22 +70,33 @@ const selectedTask: Ref<Task | undefined> = ref(undefined)
 
 const confirmDeleteModalRef: Ref<InstanceType<typeof ConfirmationModal> | null> = ref(null)
 function confirmDelete() {
-  deletedTaskManager.add(selectedTask.value!)
-  taskManager.removeBy('id', selectedTask.value!.id)
+  if (!selectedTask.value) {
+    return
+  }
+
+  deletedTaskManager.add(selectedTask.value)
+  taskManager.removeBy('id', selectedTask.value.id)
   refreshTasks()
+  notify(`Deleted task '${selectedTask.value.title}'`, 'error')
 }
 
 const confirmRecoverModalRef: Ref<InstanceType<typeof ConfirmationModal> | null> = ref(null)
 function confirmRecover() {
-  taskManager.insert(selectedTask.value!)
-  deletedTaskManager.removeBy('id', selectedTask.value!.id)
+  if (!selectedTask.value) {
+    return
+  }
+
+  taskManager.insert(selectedTask.value)
+  deletedTaskManager.removeBy('id', selectedTask.value.id)
   refreshTasks()
+  notify(`Recovered task '${selectedTask.value.title}'`, 'success')
 }
 
 const updateModalRef: Ref<InstanceType<typeof UpdateTaskModal> | null> = ref(null)
 function updateTask(task: Task, subtask: boolean) {
   taskManager.updateBy('id', task.id, task)
   refreshTasks()
+  notify('Task updated', 'info')
 }
 
 function taskClicked(id: number, isDeleted: boolean) {

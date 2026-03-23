@@ -12,7 +12,7 @@ export interface Notification {
 export const notifications = ref<Notification[]>([])
 let id = 0
 
-export function notify(message: string, type: NotificationType = 'info', duration = 3000) {
+export function notify(message: string, type: NotificationType, duration = 3000) {
   const notification: Notification = {
     id: id++,
     message,
