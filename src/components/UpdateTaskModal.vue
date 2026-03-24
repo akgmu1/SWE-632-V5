@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ToolTipDirection } from '@/enums'
-import { dateToYYYYMMDD, dateTrim, randomColor } from '@/helper'
+import { createFormState, dateToYYYYMMDD, dateTrim, randomColor, triggerAddClass } from '@/helper'
 import {
   categoryManager,
   DEFAULT_CATEGORY,
@@ -9,7 +9,7 @@ import {
 } from '@/schemas/category'
 import { subtaskManager, type Subtask } from '@/schemas/subtask'
 import type { Task } from '@/schemas/task'
-import { computed, onMounted, ref, type Ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import BaseModal from './BaseModal.vue'
 import CategoryColor from './CategoryColor.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
@@ -20,6 +20,35 @@ interface Emits {
 }
 
 const emits = defineEmits<Emits>()
+
+const subtaskForm = createFormState(
+  {
+    newSubtaskText: '',
+  },
+  {
+    newSubtaskText: (x) => {
+      if (x.trim().length === 0) {
+        return 'Subtask text cannot be empty'
+      }
+
+      return ''
+    },
+  },
+)
+
+let timeout: number | undefined = undefined
+watch(subtaskForm.state, (s) => {
+  if (s.hasErrors) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      subtaskForm.clearTouchAndErrors()
+    }, 3000)
+  }
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(timeout)
+})
 
 const task: Ref<Task | undefined> = ref(undefined)
 const subtasks: Ref<Subtask[]> = ref([])
@@ -46,14 +75,21 @@ function onCategoryChange(val: number) {
   }
 }
 
-const newSubtaskText = ref('')
+const addSubtaskRef: Ref<HTMLElement | null> = ref(null)
+async function addSubtask() {
+  subtaskForm.touchAll()
+  await nextTick()
 
-function addSubtask() {
-  const text = newSubtaskText.value.trim()
-  if (!text) return
+  if (subtaskForm.state.hasErrors) {
+    triggerAddClass(addSubtaskRef.value!, 'animate-shake')
+    await nextTick()
+    ;(document.querySelector('.input-error')! as HTMLInputElement).focus()
+    return
+  }
 
+  const text = subtaskForm.values.newSubtaskText.trim()
   tempSubtasks.value.push(text)
-  newSubtaskText.value = ''
+  subtaskForm.reset()
 }
 
 function removeTempSubtask(index: number) {
@@ -93,7 +129,9 @@ defineExpose({
     checkTitle()
     newCategoryName.value = ''
     newCategoryColor.value = randomColor()
-    newSubtaskText.value = ''
+
+    subtaskForm.reset()
+
     modalRef.value!.showModal()
   },
   close: () => {
@@ -165,7 +203,8 @@ function onConfirm(): void {
 
   subtasks.value = subtaskManager.filterBy('taskId', updatedTask.id)
   tempSubtasks.value = []
-  newSubtaskText.value = ''
+
+  subtaskForm.reset()
   newCategoryName.value = ''
   newCategoryColor.value = randomColor()
 }
@@ -280,14 +319,30 @@ function onConfirm(): void {
           </div>
         </div>
 
-        <div class="mt-3 flex gap-2">
-          <input
-            v-model="newSubtaskText"
-            class="input-bordered input w-full"
-            placeholder="Add a subtask..."
-            @keydown.enter.prevent="addSubtask"
-          />
-          <button type="button" class="btn btn-primary" @click="addSubtask">Add</button>
+        <div class="flex flex-col mt-5">
+          <div class="flex gap-2">
+            <input
+              v-model="subtaskForm.values.newSubtaskText"
+              class="input-bordered input w-full"
+              placeholder="Add a subtask..."
+              @keydown.enter.prevent="addSubtask"
+              :class="{
+                'input-error':
+                  subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText,
+              }"
+            />
+            <button ref="addSubtaskRef" type="button" class="btn btn-primary" @click="addSubtask">
+              Add
+            </button>
+          </div>
+          <label
+            v-if="subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText"
+            class="label"
+          >
+            <div class="label-text-alt text-error text-wrap">
+              {{ subtaskForm.errors.newSubtaskText }}
+            </div>
+          </label>
         </div>
       </div>
     </div>
