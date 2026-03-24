@@ -311,11 +311,7 @@ function confirmInsert() {
               {{ subtask }}
             </div>
 
-            <button
-              type="button"
-              class="btn btn-ghost btn-xs"
-              @click="removeTempSubtask(index)"
-            >
+            <button type="button" class="btn btn-ghost btn-xs" @click="removeTempSubtask(index)">
               Remove
             </button>
           </div>
@@ -328,9 +324,7 @@ function confirmInsert() {
             placeholder="Add a subtask..."
             @keydown.enter.prevent="addTempSubtask"
           />
-          <button type="button" class="btn btn-primary" @click="addTempSubtask">
-            Add
-          </button>
+          <button type="button" class="btn btn-primary" @click="addTempSubtask">Add</button>
         </div>
       </div>
 

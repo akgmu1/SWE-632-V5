@@ -235,15 +235,11 @@ const baseViewTitle = computed(() => {
         </div>
 
         <div v-else-if="q" class="py-6 text-center">
-          <div class="text-base font-medium">
-            No active tasks match "{{ search }}"
-          </div>
+          <div class="text-base font-medium">No active tasks match "{{ search }}"</div>
           <div class="mt-1 text-sm text-base-content/70">
             Try a different search term or clear the search.
           </div>
-          <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">
-            Clear search
-          </button>
+          <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">Clear search</button>
         </div>
 
         <div v-else class="py-2">
@@ -273,15 +269,11 @@ const baseViewTitle = computed(() => {
         </div>
 
         <div v-else-if="q" class="py-6 text-center">
-          <div class="text-base font-medium">
-            No completed tasks match "{{ search }}"
-          </div>
+          <div class="text-base font-medium">No completed tasks match "{{ search }}"</div>
           <div class="mt-1 text-sm text-base-content/70">
             Try a different search term or clear the search.
           </div>
-          <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">
-            Clear search
-          </button>
+          <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">Clear search</button>
         </div>
 
         <div v-else-if="activeTasks.length > 0" class="py-2">
@@ -338,15 +330,11 @@ const baseViewTitle = computed(() => {
           </div>
 
           <div v-else-if="q" class="py-6 text-center">
-            <div class="text-base font-medium">
-              No deleted tasks match "{{ search }}"
-            </div>
+            <div class="text-base font-medium">No deleted tasks match "{{ search }}"</div>
             <div class="mt-1 text-sm text-base-content/70">
               Try a different search term or clear the search.
             </div>
-            <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">
-              Clear search
-            </button>
+            <button class="btn btn-ghost btn-sm mt-3" @click="search = ''">Clear search</button>
           </div>
 
           <div v-else class="py-2">

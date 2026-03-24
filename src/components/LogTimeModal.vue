@@ -108,16 +108,15 @@ function onConfirm() {
 
   reloadEntries()
   resetForm()
-  
 }
 
 defineExpose({
-showModal: (t: Task) => {
-  task.value = t
-  resetForm()
-  reloadEntries()
-  modalRef.value?.showModal()
-},
+  showModal: (t: Task) => {
+    task.value = t
+    resetForm()
+    reloadEntries()
+    modalRef.value?.showModal()
+  },
   close: () => modalRef.value?.close(),
 })
 </script>
@@ -174,11 +173,7 @@ showModal: (t: Task) => {
 
       <div v-if="editingEntryId !== null" class="flex items-center gap-2">
         <div class="badge badge-warning">Editing existing entry</div>
-        <button
-          type="button"
-          class="btn btn-ghost btn-xs"
-          @click.stop="cancelEdit"
-        >
+        <button type="button" class="btn btn-ghost btn-xs" @click.stop="cancelEdit">
           Cancel edit
         </button>
       </div>
@@ -205,11 +200,7 @@ showModal: (t: Task) => {
             </div>
 
             <div class="flex gap-2">
-              <button
-                type="button"
-                class="btn btn-outline btn-xs"
-                @click.stop="editEntry(entry)"
-              >
+              <button type="button" class="btn btn-outline btn-xs" @click.stop="editEntry(entry)">
                 Edit
               </button>
               <button
@@ -223,9 +214,7 @@ showModal: (t: Task) => {
           </div>
         </div>
 
-        <div v-else class="text-sm text-base-content/70">
-          No time entries yet.
-        </div>
+        <div v-else class="text-sm text-base-content/70">No time entries yet.</div>
       </div>
     </div>
 
