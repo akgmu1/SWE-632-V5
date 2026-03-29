@@ -8,7 +8,7 @@ import {
   type Category,
 } from '@/schemas/category'
 import { subtaskManager, type Subtask, type SubtaskLike } from '@/schemas/subtask'
-import type { Task } from '@/schemas/task'
+import { taskManager, type Task } from '@/schemas/task'
 import { ArrowsUpDownIcon } from '@heroicons/vue/24/solid'
 import { computed, nextTick, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import BaseModal from './BaseModal.vue'
@@ -204,6 +204,9 @@ async function onConfirm() {
     category: finalCategory,
     dueDate: dateTrim(form.values.dueDate),
   }
+
+  // Update the task
+  taskManager.updateBy('id', updatedTask.id, updatedTask)
 
   for (const [index, s] of tempSubtasks.value.entries()) {
     // Either update or add
