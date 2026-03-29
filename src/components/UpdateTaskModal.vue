@@ -7,16 +7,18 @@ import {
   META_ADD_NEW_CATEGORY,
   type Category,
 } from '@/schemas/category'
-import { subtaskManager, type Subtask } from '@/schemas/subtask'
+import { subtaskManager, type Subtask, type SubtaskLike } from '@/schemas/subtask'
 import type { Task } from '@/schemas/task'
+import { ArrowsUpDownIcon } from '@heroicons/vue/24/solid'
 import { computed, nextTick, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import BaseModal from './BaseModal.vue'
 import CategoryColor from './CategoryColor.vue'
 import ConfirmationModal from './ConfirmationModal.vue'
+import SortableList from './SortableList.vue'
 import ToolTip from './ToolTip.vue'
 
 interface Emits {
-  (e: 'updateTask', task: Task, subtask: boolean): void
+  (e: 'confirm'): void
 }
 
 const emits = defineEmits<Emits>()
@@ -51,8 +53,9 @@ onBeforeUnmount(() => {
 })
 
 const task: Ref<Task | undefined> = ref(undefined)
-const subtasks: Ref<Subtask[]> = ref([])
-const tempSubtasks = ref<string[]>([])
+let originalSubtasks: Subtask[] = []
+const tempSubtasks = ref<SubtaskLike[]>([])
+let sortId: number = 0
 
 const categories: Ref<Category[]> = ref(categoryManager.all())
 const existingCategory: Ref<number | undefined> = ref()
@@ -119,7 +122,11 @@ async function addSubtask() {
   }
 
   const text = subtaskForm.values.newSubtaskText.trim()
-  tempSubtasks.value.push(text)
+  tempSubtasks.value.push({
+    text,
+    completed: false,
+    sortId: sortId++,
+  })
   subtaskForm.reset()
 }
 
@@ -127,23 +134,9 @@ function removeTempSubtask(index: number) {
   tempSubtasks.value.splice(index, 1)
 }
 
-function toggleSubtask(subtask: Subtask, completed: boolean) {
+function toggleSubtask(subtask: SubtaskLike, completed: boolean) {
   if (!task.value) return
-
-  subtaskManager.updateBy('id', subtask.id, {
-    completed,
-  })
-
-  emits('updateTask', task.value, true)
-}
-
-function removeSubtask(subtask: Subtask) {
-  if (!task.value) return
-
-  subtaskManager.removeBy('id', subtask.id)
-  subtasks.value = subtaskManager.filterBy('taskId', task.value.id)
-
-  emits('updateTask', task.value, true)
+  subtask.completed = completed
 }
 
 const modalRef: Ref<InstanceType<typeof BaseModal> | null> = ref(null)
@@ -153,8 +146,16 @@ defineExpose({
     categories.value = categoryManager.all()
     task.value = t
 
-    subtasks.value = subtaskManager.filterBy('taskId', t.id)
-    tempSubtasks.value = []
+    originalSubtasks = subtaskManager.filterBy('taskId', t.id)
+    sortId = 0
+    tempSubtasks.value = [...originalSubtasks]
+      .sort((a, b) => a.order - b.order)
+      .map((a) => {
+        return {
+          ...a,
+          sortId: sortId++,
+        }
+      })
 
     subtaskForm.reset()
     form.reset()
@@ -204,21 +205,32 @@ async function onConfirm() {
     dueDate: dateTrim(form.values.dueDate),
   }
 
-  emits('updateTask', updatedTask, true)
+  for (const [index, s] of tempSubtasks.value.entries()) {
+    // Either update or add
+    if (s.id) {
+      subtaskManager.updateBy('id', s.id, {
+        ...s,
+        order: index,
+      })
+    } else {
+      subtaskManager.add({
+        ...s,
+        order: index,
+        taskId: updatedTask.id,
+      })
+    }
+  }
 
-  // Existing task flow: attach newly added subtasks immediately.
-  // If your create page uses a different component, copy this same pattern there.
-  tempSubtasks.value.forEach((text) => {
-    subtaskManager.add({
-      taskId: updatedTask.id,
-      completed: false,
-      text,
-    })
-  })
+  // Remove all deleted subtasks
+  for (const o of originalSubtasks) {
+    if (!tempSubtasks.value.some((s) => s.id === o.id)) {
+      subtaskManager.removeBy('id', o.id)
+    }
+  }
 
-  subtasks.value = subtaskManager.filterBy('taskId', updatedTask.id)
+  emits('confirm')
+
   tempSubtasks.value = []
-
   task.value = undefined
   subtaskForm.reset()
   form.reset()
@@ -337,37 +349,42 @@ async function onConfirm() {
       <div class="mt-6 text-left">
         <div class="mb-2 font-semibold">Subtasks</div>
 
-        <div v-if="subtasks.length || tempSubtasks.length" class="space-y-2">
-          <div v-for="s in subtasks" :key="s.id" class="flex items-center gap-2">
-            <input
-              type="checkbox"
-              class="checkbox"
-              :checked="s.completed"
-              @change="toggleSubtask(s, ($event.target as HTMLInputElement).checked)"
-            />
-
-            <div class="flex-1" :class="{ 'line-through opacity-60': s.completed }">
-              {{ s.text }}
-            </div>
-
-            <button type="button" class="btn btn-ghost btn-xs" @click="removeSubtask(s)">
-              Remove
-            </button>
-          </div>
-
-          <div
-            v-for="(s, index) in tempSubtasks"
-            :key="`temp-${index}`"
-            class="flex items-center gap-2"
+        <div v-if="tempSubtasks.length" class="space-y-2">
+          <SortableList
+            v-model="tempSubtasks"
+            item-key="sortId"
+            :options="{
+              handle: '.handle',
+            }"
+            class="flex flex-col gap-2"
           >
-            <div class="flex-1">
-              {{ s }}
-            </div>
+            <template #default="s">
+              <div class="flex justify-between">
+                <!-- Left Side -->
+                <div class="flex gap-2 items-center">
+                  <div class="handle cursor-grab bg-base-300 p-1 rounded">
+                    <ArrowsUpDownIcon class="size-5" />
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    :checked="s.item.completed"
+                    @change="toggleSubtask(s.item, ($event.target as HTMLInputElement).checked)"
+                  />
+                  {{ s.item.text }}
+                </div>
 
-            <button type="button" class="btn btn-ghost btn-xs" @click="removeTempSubtask(index)">
-              Remove
-            </button>
-          </div>
+                <!-- Right side -->
+                <button
+                  type="button"
+                  class="btn btn-error btn-xs"
+                  @click="removeTempSubtask(s.index)"
+                >
+                  Remove
+                </button>
+              </div>
+            </template>
+          </SortableList>
         </div>
 
         <div class="flex flex-col mt-5">

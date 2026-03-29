@@ -1,3 +1,5 @@
+export type Optionalize<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
 export function dateToYYYYMMDD(date: Date): string | undefined {
   // Helper method to format date to 'YYYY-MM-DD'
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0]

@@ -34,7 +34,7 @@ const taskCategory = computed(() => {
 })
 
 const taskSubtasks = computed(() => {
-  return subtaskManager.filterBy('taskId', props.task.id)
+  return subtaskManager.filterBy('taskId', props.task.id).sort((a, b) => a.order - b.order)
 })
 
 const taskTimeEntries = computed(() => {

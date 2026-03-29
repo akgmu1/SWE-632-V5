@@ -356,7 +356,7 @@ const baseViewTitle = computed(() => {
     </div>
   </BaseView>
 
-  <UpdateTaskModal ref="updateModalRef" @updateTask="updateTask" />
+  <UpdateTaskModal ref="updateModalRef" @confirm="refreshTasks" />
 
   <ConfirmationModal
     ref="confirmClearRecentlyDeleteModalRef"

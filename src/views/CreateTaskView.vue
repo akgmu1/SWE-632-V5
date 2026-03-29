@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CategoryColor from '@/components/CategoryColor.vue'
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import SortableList from '@/components/SortableList.vue'
 import ToolTip from '@/components/ToolTip.vue'
 import { DataManager } from '@/data'
 import { ToolTipDirection } from '@/enums'
@@ -12,8 +13,9 @@ import {
   META_ADD_NEW_CATEGORY,
   type Category,
 } from '@/schemas/category'
-import { subtaskManager } from '@/schemas/subtask'
+import { subtaskManager, type SubtaskLike } from '@/schemas/subtask'
 import { taskManager, type Task } from '@/schemas/task'
+import { ArrowsUpDownIcon } from '@heroicons/vue/24/solid'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import z from 'zod'
 import BaseView from './BaseView.vue'
@@ -99,7 +101,8 @@ onBeforeUnmount(() => {
   clearTimeout(timeout)
 })
 
-const tempSubtasks: Ref<string[]> = ref([])
+const tempSubtasks: Ref<SubtaskLike[]> = ref([])
+let sortId: number = 0
 const subtaskTextRef: Ref<HTMLInputElement | null> = ref(null)
 
 async function addTempSubtask() {
@@ -114,8 +117,16 @@ async function addTempSubtask() {
   }
 
   const text = subtaskForm.values.newSubtaskText.trim()
-  tempSubtasks.value.push(text)
+  tempSubtasks.value.push({
+    text,
+    completed: false,
+    sortId: sortId++,
+  })
   subtaskForm.reset()
+}
+
+function toggleSubtask(subtask: SubtaskLike, completed: boolean) {
+  subtask.completed = completed
 }
 
 function removeTempSubtask(index: number) {
@@ -192,13 +203,14 @@ async function onConfirm() {
     created: createdAt,
   })
 
-  tempSubtasks.value.forEach((subtaskText) => {
+  for (const [index, s] of tempSubtasks.value.entries()) {
     subtaskManager.add({
+      order: index,
       taskId: newTaskId,
-      completed: false,
-      text: subtaskText,
+      completed: s.completed,
+      text: s.text,
     })
-  })
+  }
 
   saveRememberedOptions()
 
@@ -383,19 +395,41 @@ function confirmInsert() {
         <div class="mb-2 font-semibold">Subtasks</div>
 
         <div v-if="tempSubtasks.length" class="space-y-2">
-          <div
-            v-for="(subtask, index) in tempSubtasks"
-            :key="`temp-${index}`"
-            class="flex items-center gap-2"
+          <SortableList
+            v-model="tempSubtasks"
+            item-key="sortId"
+            :options="{
+              handle: '.handle',
+            }"
+            class="flex flex-col gap-2"
           >
-            <div class="flex-1 rounded bg-base-200 px-3 py-2">
-              {{ subtask }}
-            </div>
+            <template #default="s">
+              <div class="flex justify-between">
+                <!-- Left Side -->
+                <div class="flex gap-2 items-center">
+                  <div class="handle cursor-grab bg-base-300 p-1 rounded">
+                    <ArrowsUpDownIcon class="size-5" />
+                  </div>
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    :checked="s.item.completed"
+                    @change="toggleSubtask(s.item, ($event.target as HTMLInputElement).checked)"
+                  />
+                  {{ s.item.text }}
+                </div>
 
-            <button type="button" class="btn btn-ghost btn-xs" @click="removeTempSubtask(index)">
-              Remove
-            </button>
-          </div>
+                <!-- Right side -->
+                <button
+                  type="button"
+                  class="btn btn-error btn-xs"
+                  @click="removeTempSubtask(s.index)"
+                >
+                  Remove
+                </button>
+              </div>
+            </template>
+          </SortableList>
         </div>
 
         <div class="flex flex-col">
