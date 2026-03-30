@@ -7,7 +7,7 @@ import UpdateTaskModal from '@/components/UpdateTaskModal.vue'
 import { HomeState } from '@/enums'
 import { SortOption, sortTasks } from '@/helper'
 import { notify } from '@/notification'
-import { categoryManager, type Category } from '@/schemas/category'
+import { categoryManager, META_ADD_NEW_CATEGORY, type Category } from '@/schemas/category'
 import { deletedTaskManager, taskManager, type Task } from '@/schemas/task'
 import { timeEntryManager, type CreateTimeEntry } from '@/schemas/timeEntry'
 import { computed, ref, type Ref } from 'vue'
@@ -41,11 +41,16 @@ const sortOption = ref<SortOption>(SortOption.Created)
 const sortDescending = ref(false)
 
 const categories: Ref<Category[]> = ref(categoryManager.all())
+const filterableCategories = computed(() =>
+  categories.value.filter((c) => c.id !== META_ADD_NEW_CATEGORY),
+)
 const tasks: Ref<Task[]> = ref(taskManager.all())
 const deletedTasks: Ref<Task[]> = ref(deletedTaskManager.all())
 
 const search = ref('')
 const q = computed(() => search.value.trim().toLowerCase())
+
+const filteredCategories: Ref<number[]> = ref([])
 
 function applyDirection(items: Task[]) {
   return sortDescending.value ? [...items].reverse() : items
@@ -55,7 +60,11 @@ const activeTasks = computed(() =>
   applyDirection(
     sortTasks(
       tasks.value.filter(
-        (t) => !t.completed && (!q.value || t.title.toLowerCase().includes(q.value)),
+        (t) =>
+          !t.completed &&
+          (!q.value || t.title.toLowerCase().includes(q.value)) &&
+          (filteredCategories.value.length === 0 ||
+            filteredCategories.value.some((c) => c === t.category)),
       ),
       sortOption.value,
     ),
@@ -66,7 +75,11 @@ const completedTasks = computed(() =>
   applyDirection(
     sortTasks(
       tasks.value.filter(
-        (t) => t.completed && (!q.value || t.title.toLowerCase().includes(q.value)),
+        (t) =>
+          t.completed &&
+          (!q.value || t.title.toLowerCase().includes(q.value)) &&
+          (filteredCategories.value.length === 0 ||
+            filteredCategories.value.some((c) => c === t.category)),
       ),
       sortOption.value,
     ),
@@ -76,7 +89,12 @@ const completedTasks = computed(() =>
 const filteredDeletedTasks = computed(() =>
   applyDirection(
     sortTasks(
-      deletedTasks.value.filter((t) => !q.value || t.title.toLowerCase().includes(q.value)),
+      deletedTasks.value.filter(
+        (t) =>
+          (!q.value || t.title.toLowerCase().includes(q.value)) &&
+          (filteredCategories.value.length === 0 ||
+            filteredCategories.value.some((c) => c === t.category)),
+      ),
       sortOption.value,
     ),
   ),
@@ -208,6 +226,52 @@ const baseViewTitle = computed(() => {
     </div>
 
     <div class="mb-4 flex items-center justify-end gap-2">
+      <div>
+        <span class="text-sm font-medium">Filter:</span>
+        <div class="dropdown dropdown-center">
+          <div tabindex="0" role="button" class="select select-sm m-1">Category</div>
+          <ul
+            tabindex="-1"
+            class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+          >
+            <template v-for="c in filterableCategories">
+              <li class="flex justify-start items-center flex-row">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-sm"
+                  :checked="filteredCategories.some((f) => f === c.id)"
+                  @change="
+                    (event) => {
+                      const checked = (event.target as HTMLInputElement).checked
+                      if (checked) {
+                        filteredCategories.push(c.id)
+                      } else {
+                        filteredCategories = filteredCategories.filter((f) => f !== c.id)
+                      }
+                    }
+                  "
+                />
+                <div class="pointer-events-none">
+                  {{ c.name }}
+                </div>
+              </li>
+            </template>
+            <li>
+              <button
+                class="btn btn-ghost"
+                @click="
+                  () => {
+                    filteredCategories = []
+                  }
+                "
+              >
+                Clear
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       <label class="flex items-center gap-2">
         <span class="text-sm font-medium">Sort by:</span>
         <select v-model="sortOption" class="select select-bordered select-sm w-auto">
