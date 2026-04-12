@@ -8,7 +8,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   return {
-    base: mode === 'production' ? '/SWE-632-V4' : '/',
+    base: mode === 'production' ? '/SWE-632-V5' : '/',
     plugins: [tailwindcss(), vue(), vueDevTools()],
     resolve: {
       alias: {
