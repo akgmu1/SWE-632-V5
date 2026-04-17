@@ -217,6 +217,7 @@ export function colorDistance(a: Color, b: Color): number {
   return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2)
 }
 
+export const SIMILAR_COLOR_THRESHOLD = 0.8
 export function colorSimilarity(a: Color, b: Color): number {
   const maxDist = Math.sqrt(3 * 255 ** 2)
   return 1 - colorDistance(a, b) / maxDist

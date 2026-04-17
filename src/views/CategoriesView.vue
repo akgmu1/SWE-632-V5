@@ -2,7 +2,13 @@
 import CategoryColor from '@/components/CategoryColor.vue'
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
 import ToolTip from '@/components/ToolTip.vue'
-import { colorSimilarity, createFormState, parseColor, randomColor } from '@/helper'
+import {
+  colorSimilarity,
+  createFormState,
+  parseColor,
+  randomColor,
+  SIMILAR_COLOR_THRESHOLD,
+} from '@/helper'
 import {
   categoryManager,
   DEFAULT_CATEGORY,
@@ -37,12 +43,10 @@ const form = createFormState(
   },
 )
 
-const SIMILAR_CATEGORY_THRESHOLD = 0.7
 const similarCurrentCategories = computed(() => {
   const categories = categoryManager.filterBy(
     (x) =>
-      colorSimilarity(parseColor(x.color), parseColor(form.values.color)) >
-      SIMILAR_CATEGORY_THRESHOLD,
+      colorSimilarity(parseColor(x.color), parseColor(form.values.color)) > SIMILAR_COLOR_THRESHOLD,
   )
 
   const result = []

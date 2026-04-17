@@ -7,6 +7,7 @@ import {
   dateTrim,
   parseColor,
   randomColor,
+  SIMILAR_COLOR_THRESHOLD,
   triggerAddClass,
 } from '@/helper'
 import {
@@ -103,13 +104,12 @@ const form = createFormState(
   },
 )
 
-const SIMILAR_CATEGORY_THRESHOLD = 0.7
 const similarCurrentCategories = computed(() => {
   if (form.values.selectedCategory === META_ADD_NEW_CATEGORY) {
     const categories = categoryManager.filterBy(
       (x) =>
         colorSimilarity(parseColor(x.color), parseColor(form.values.newCategoryColor)) >
-        SIMILAR_CATEGORY_THRESHOLD,
+        SIMILAR_COLOR_THRESHOLD,
     )
 
     const result = []
