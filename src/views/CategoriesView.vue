@@ -2,7 +2,7 @@
 import CategoryColor from '@/components/CategoryColor.vue'
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
 import ToolTip from '@/components/ToolTip.vue'
-import { createFormState, randomColor } from '@/helper'
+import { colorSimilarity, createFormState, parseColor, randomColor } from '@/helper'
 import {
   categoryManager,
   DEFAULT_CATEGORY,
@@ -36,6 +36,35 @@ const form = createFormState(
     },
   },
 )
+
+const SIMILAR_CATEGORY_THRESHOLD = 0.7
+const similarCurrentCategories = computed(() => {
+  const categories = categoryManager.filterBy(
+    (x) =>
+      colorSimilarity(parseColor(x.color), parseColor(form.values.color)) >
+      SIMILAR_CATEGORY_THRESHOLD,
+  )
+
+  const result = []
+  for (let c of categories) {
+    // Skip if current category
+    if (c.id === selectedCategory.value?.id) {
+      continue
+    }
+    // Skip meta categories
+    if (PERM_CATEGORIES.includes(c.id) && c.id !== DEFAULT_CATEGORY) {
+      continue
+    }
+
+    const percent = colorSimilarity(parseColor(c.color), parseColor(form.values.color))
+    result.push({
+      category: c,
+      percent,
+    })
+  }
+
+  return result
+})
 
 function deleteCategory() {
   if (selectedCategory.value === null) {
@@ -170,6 +199,35 @@ const canConfirm = computed(() => !form.state.hasErrors)
               <CategoryColor :color="form.values.color" :size="6" />
             </label>
           </ToolTip>
+        </div>
+      </div>
+
+      <div
+        v-if="similarCurrentCategories.length > 0"
+        class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
+      >
+        <div class="alert alert-warning">
+          <p>
+            <span class="font-bold">Warning:</span>
+            The color selected is similar to another category's color. Selecting it can result in a
+            lower user experience.
+          </p>
+        </div>
+
+        <button class="btn btn-outline my-3" @click="form.values.color = randomColor()">
+          Select New Random Color
+        </button>
+
+        <div class="flex flex-col gap-2 pt-2">
+          <div v-for="c in similarCurrentCategories" class="flex justify-between">
+            <div class="flex gap-2">
+              <CategoryColor :category="c.category" />
+              <div>
+                {{ c.category.name }}
+              </div>
+            </div>
+            <div class="font-bold">{{ Math.trunc(c.percent * 100) }}% similar</div>
+          </div>
         </div>
       </div>
 

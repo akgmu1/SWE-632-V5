@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { ToolTipDirection } from '@/enums'
-import { createFormState, dateToYYYYMMDD, dateTrim, randomColor, triggerAddClass } from '@/helper'
+import {
+  colorSimilarity,
+  createFormState,
+  dateToYYYYMMDD,
+  dateTrim,
+  parseColor,
+  randomColor,
+  triggerAddClass,
+} from '@/helper'
 import {
   categoryManager,
   DEFAULT_CATEGORY,
   META_ADD_NEW_CATEGORY,
+  PERM_CATEGORIES,
   type Category,
 } from '@/schemas/category'
 import { subtaskManager, type Subtask, type SubtaskLike } from '@/schemas/subtask'
@@ -93,6 +102,35 @@ const form = createFormState(
     },
   },
 )
+
+const SIMILAR_CATEGORY_THRESHOLD = 0.7
+const similarCurrentCategories = computed(() => {
+  if (form.values.selectedCategory === META_ADD_NEW_CATEGORY) {
+    const categories = categoryManager.filterBy(
+      (x) =>
+        colorSimilarity(parseColor(x.color), parseColor(form.values.newCategoryColor)) >
+        SIMILAR_CATEGORY_THRESHOLD,
+    )
+
+    const result = []
+    for (let c of categories) {
+      // Skip meta categories
+      if (PERM_CATEGORIES.includes(c.id) && c.id !== DEFAULT_CATEGORY) {
+        continue
+      }
+
+      const percent = colorSimilarity(parseColor(c.color), parseColor(form.values.newCategoryColor))
+      result.push({
+        category: c,
+        percent,
+      })
+    }
+
+    return result
+  } else {
+    return []
+  }
+})
 
 const currentCategory = computed(() => {
   return categoryManager.findBy('id', form.values.selectedCategory)!
@@ -346,6 +384,35 @@ async function onConfirm() {
               </button>
             </template>
           </label>
+        </div>
+      </div>
+
+      <div
+        v-if="isAddingNewCategory && similarCurrentCategories.length > 0"
+        class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
+      >
+        <div class="alert alert-warning">
+          <p>
+            <span class="font-bold">Warning:</span>
+            The color selected is similar to another category's color. Selecting it can result in a
+            lower user experience.
+          </p>
+        </div>
+
+        <button class="btn btn-outline my-3" @click="form.values.newCategoryColor = randomColor()">
+          Select New Random Color
+        </button>
+
+        <div class="flex flex-col gap-2 pt-2">
+          <div v-for="c in similarCurrentCategories" class="flex justify-between">
+            <div class="flex gap-2">
+              <CategoryColor :category="c.category" />
+              <div>
+                {{ c.category.name }}
+              </div>
+            </div>
+            <div class="font-bold">{{ Math.trunc(c.percent * 100) }}% similar</div>
+          </div>
         </div>
       </div>
 
