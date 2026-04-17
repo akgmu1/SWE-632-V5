@@ -9,6 +9,7 @@ import { HomeState } from '@/enums'
 import { SortOption, sortTasks } from '@/helper'
 import { notify } from '@/notification'
 import { categoryManager, META_ADD_NEW_CATEGORY, type Category } from '@/schemas/category'
+import { subtaskManager } from '@/schemas/subtask'
 import { deletedTaskManager, taskManager, type Task } from '@/schemas/task'
 import { timeEntryManager, type CreateTimeEntry } from '@/schemas/timeEntry'
 import { computed, ref, type Ref } from 'vue'
@@ -119,6 +120,18 @@ function toggleTask(id: number, completed: boolean) {
   } else {
     notify(`Marked task as not complete '${task?.title}'`, 'warning')
   }
+  refreshTasks()
+}
+function toggleSubtask(id: number, completed: boolean) {
+  subtaskManager.updateBy('id', id, { completed })
+
+  const subtask = subtaskManager.findBy('id', id)
+  if (completed) {
+    notify(`Marked subtask as complete '${subtask?.text}'`, 'success')
+  } else {
+    notify(`Marked subtask as not complete '${subtask?.text}'`, 'warning')
+  }
+
   refreshTasks()
 }
 
@@ -291,16 +304,17 @@ const baseViewTitle = computed(() => {
       />
       <div class="tab-content border-base-300 bg-base-100 p-3">
         <div v-if="activeTasks.length > 0" class="flex flex-col gap-2">
-          <TaskItem
-            v-for="task in activeTasks"
-            :key="task.id"
-            :task="task"
-            :home-state="props.state"
-            :is-deleted="false"
-            @toggle="toggleTask"
-            @clicked="taskClicked"
-            @logTimeClicked="openLogTime"
-          />
+        <TaskItem
+          v-for="t in activeTasks"
+          :key="t.id"
+          :task="t"
+          :is-deleted="false"
+          :home-state="props.state"
+          @toggle="toggleTask"
+          @clicked="taskClicked"
+          @logTimeClicked="openLogTime"
+          @subtaskToggle="toggleSubtask"
+        />
         </div>
 
         <div v-else-if="q" class="py-6 text-center">

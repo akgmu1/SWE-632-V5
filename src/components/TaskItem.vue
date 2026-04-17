@@ -13,6 +13,7 @@ interface Emits {
   (e: 'toggle', id: number, completed: boolean): void
   (e: 'clicked', id: number, isDeleted: boolean): void
   (e: 'logTimeClicked', task: Task): void
+  (e: 'subtaskToggle', id: number, completed: boolean): void
 }
 
 const emits = defineEmits<Emits>()
@@ -71,6 +72,12 @@ function onChange(checked: boolean) {
   if (props.homeState == HomeState.Default && !props.isDeleted) {
     props.task.completed = checked
     emits('toggle', props.task.id, props.task.completed)
+  }
+}
+
+function onSubtaskChange(id: number, checked: boolean) {
+  if (props.homeState == HomeState.Default && !props.isDeleted) {
+    emits('subtaskToggle', id, checked)
   }
 }
 
@@ -133,7 +140,14 @@ const subtaskProgress = computed(() => {
 
         <div v-if="taskSubtasks.length" class="mt-2 space-y-1 pl-1 text-sm opacity-80">
           <div v-for="s in taskSubtasks" :key="s.id" class="flex min-w-0 items-center gap-2">
-            <input class="checkbox checkbox-xs" type="checkbox" :checked="s.completed" disabled />
+            <input
+              class="checkbox checkbox-xs"
+              type="checkbox"
+              :checked="s.completed"
+              :disabled="props.isDeleted || !homeStateDefault"
+              @click.stop
+              @change="onSubtaskChange(s.id, ($event.target as HTMLInputElement).checked)"
+            />
             <span class="flex-1 truncate" :class="{ 'line-through opacity-60': s.completed }">
               {{ s.text }}
             </span>
