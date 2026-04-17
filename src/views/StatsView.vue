@@ -213,9 +213,7 @@ const chartOptions = ref({
         label: function (context) {
           const minutes = Number(context.parsed ?? 0)
           const hours = (minutes / 60).toFixed(1)
-          const percent = totalMinutes.value
-            ? Math.round((minutes / totalMinutes.value) * 100)
-            : 0
+          const percent = totalMinutes.value ? Math.round((minutes / totalMinutes.value) * 100) : 0
           return `${context.label}: ${hours}h (${minutes} min, ${percent}%)`
         },
       } as TooltipCallbacks<'doughnut'>,
@@ -313,9 +311,7 @@ const dateFilterLabel = computed(() => {
           <div class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-sm">
             <div class="mb-4">
               <div class="text-lg font-semibold">Category Breakdown</div>
-              <div class="text-sm text-base-content/70">
-                See where your logged time is going.
-              </div>
+              <div class="text-sm text-base-content/70">See where your logged time is going.</div>
             </div>
 
             <div
@@ -435,10 +431,7 @@ const dateFilterLabel = computed(() => {
         </div>
       </template>
 
-      <div
-        v-else
-        class="rounded-xl border border-dashed border-base-300 bg-base-100 p-6"
-      >
+      <div v-else class="rounded-xl border border-dashed border-base-300 bg-base-100 p-6">
         <div class="text-lg font-semibold">No statistics available yet</div>
         <div class="mt-2 text-sm text-base-content/70">
           Start logging time on tasks to unlock category breakdowns, task totals, and recent entry

@@ -304,17 +304,17 @@ const baseViewTitle = computed(() => {
       />
       <div class="tab-content border-base-300 bg-base-100 p-3">
         <div v-if="activeTasks.length > 0" class="flex flex-col gap-2">
-        <TaskItem
-          v-for="t in activeTasks"
-          :key="t.id"
-          :task="t"
-          :is-deleted="false"
-          :home-state="props.state"
-          @toggle="toggleTask"
-          @clicked="taskClicked"
-          @logTimeClicked="openLogTime"
-          @subtaskToggle="toggleSubtask"
-        />
+          <TaskItem
+            v-for="t in activeTasks"
+            :key="t.id"
+            :task="t"
+            :is-deleted="false"
+            :home-state="props.state"
+            @toggle="toggleTask"
+            @clicked="taskClicked"
+            @logTimeClicked="openLogTime"
+            @subtaskToggle="toggleSubtask"
+          />
         </div>
 
         <div v-else-if="q" class="py-6 text-center">
