@@ -57,7 +57,7 @@ async function onClick(confirm: boolean) {
       <button
         class="btn"
         ref="confirmButtonRef"
-        :class="{ 'btn-success': props.positive, 'btn-error': !props.positive }"
+        :class="{ 'btn-primary': props.positive, 'btn-error': !props.positive }"
         @click="onClick(true)"
       >
         <slot name="confirm"> Confirm </slot>

@@ -515,7 +515,7 @@ function confirmInsert() {
             <button
               ref="addSubtaskRef"
               type="button"
-              class="btn btn-primary"
+              class="btn btn-outline btn-primary"
               @click="addTempSubtask"
             >
               Add
@@ -547,7 +547,7 @@ function confirmInsert() {
     <div class="flex justify-center">
       <button class="btn btn-outline" @click="onCancel">Cancel</button>
       <div class="px-4"></div>
-      <button ref="createButtonRef" class="btn btn-success" @click="onConfirm">Create</button>
+      <button ref="createButtonRef" class="btn btn-primary" @click="onConfirm">Create</button>
     </div>
 
     <div class="text-center font-bold text-lg pt-7">Recently Created Tasks</div>

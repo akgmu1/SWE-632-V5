@@ -470,7 +470,12 @@ async function onConfirm() {
                   subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText,
               }"
             />
-            <button ref="addSubtaskRef" type="button" class="btn btn-primary" @click="addSubtask">
+            <button
+              ref="addSubtaskRef"
+              type="button"
+              class="btn btn-primary btn-outline"
+              @click="addSubtask"
+            >
               Add
             </button>
           </div>
