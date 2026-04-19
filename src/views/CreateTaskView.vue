@@ -468,13 +468,13 @@ function confirmInsert() {
             :options="{
               handle: '.handle',
             }"
-            class="flex flex-col gap-2"
+            class="flex flex-col gap-2 border border-base-300 bg-base-100 rounded-box p-2"
           >
             <template #default="s">
-              <div class="flex justify-between">
+              <div class="flex justify-between bg-base-200 rounded shadow p-2">
                 <!-- Left Side -->
                 <div class="flex gap-2 items-center">
-                  <div class="handle cursor-grab bg-base-300 p-1 rounded">
+                  <div class="handle cursor-grab border-primary border text-primary p-1 rounded">
                     <ArrowsUpDownIcon class="size-5" />
                   </div>
                   <input
