@@ -142,19 +142,17 @@ const canConfirm = computed(() => !form.state.hasErrors)
                 Edit
               </button>
             </div>
-            <ToolTip tip="Delete">
-              <button
-                class="btn btn-error btn-xs"
-                @click="
-                  () => {
-                    selectedCategory = c
-                    deleteModalRef?.showModal()
-                  }
-                "
-              >
-                Delete
-              </button>
-            </ToolTip>
+            <button
+              class="btn btn-error btn-xs"
+              @click="
+                () => {
+                  selectedCategory = c
+                  deleteModalRef?.showModal()
+                }
+              "
+            >
+              Delete
+            </button>
           </div>
         </div>
       </div>
