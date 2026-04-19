@@ -2,7 +2,7 @@
 import CategoryColor from '@/components/CategoryColor.vue'
 import MiniCalendar from '@/components/MiniCalendar.vue'
 import { dateToYYYYMMDD, dateTrim, isSameDay } from '@/helper'
-import { categoryManager, type Category } from '@/schemas/category'
+import { categoryManager, META_ADD_NEW_CATEGORY, type Category } from '@/schemas/category'
 import { taskManager, type Task } from '@/schemas/task'
 import { timeEntryManager, type TimeEntry } from '@/schemas/timeEntry'
 import {
@@ -42,6 +42,20 @@ watch(selectedDate, () => {
   }
 })
 
+const categories: Ref<Category[]> = ref(categoryManager.all())
+const filterableCategories = computed(() =>
+  categories.value.filter((c) => c.id !== META_ADD_NEW_CATEGORY),
+)
+const filteredCategories: Ref<Category[]> = ref([])
+watch(
+  filteredCategories,
+  () => {
+    console.log('change')
+    timeEntries.value = computeEntries()
+  },
+  { deep: true },
+)
+
 function ensureNotDeleted(input: TimeEntry[]): TimeEntry[] {
   return input.filter((e) => taskManager.someBy((t) => t.id === e.taskId))
 }
@@ -59,6 +73,20 @@ function computeEntries(): TimeEntry[] {
       )
       break
   }
+
+  // Filter out entries based on category
+  result = result.filter((entry) => {
+    if (filteredCategories.value.length === 0) {
+      return true
+    }
+
+    let task = taskManager.findBy('id', entry.taskId)
+    if (task === undefined) {
+      return false
+    }
+
+    return filteredCategories.value.some((c) => c.id === task.category)
+  })
 
   return ensureNotDeleted(result)
 }
@@ -258,11 +286,53 @@ const dateFilterLabel = computed(() => {
         </div>
       </div>
 
-      <div class="flex justify-center">
-        <label class="label gap-2">
-          <input type="checkbox" v-model="showAll" class="checkbox" />
-          Show All
-        </label>
+      <div class="flex justify-center items-center gap-2">
+        <div>
+          <label class="label gap-2">
+            <input type="checkbox" v-model="showAll" class="checkbox" />
+            Show All
+          </label>
+        </div>
+        <div>
+          <div class="dropdown dropdown-center">
+            <div tabindex="0" role="button" class="select select-sm m-1">Filter Category</div>
+            <div
+              tabindex="-1"
+              class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+            >
+              <div class="flex flex-col gap-2">
+                <template v-for="c in filterableCategories">
+                  <div class="flex justify-start items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-sm"
+                      :checked="filteredCategories.some((f) => f.id === c.id)"
+                      @change="
+                        (event) => {
+                          const checked = (event.target as HTMLInputElement).checked
+                          if (checked) {
+                            filteredCategories.push(c)
+                          } else {
+                            filteredCategories = filteredCategories.filter((f) => f.id !== c.id)
+                          }
+                        }
+                      "
+                    />
+                    <CategoryColor :category="c" :size="4" />
+                    <div>
+                      {{ c.name }}
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div class="mt-2 text-end">
+                <button class="btn btn-primary btn-xs" @click="filteredCategories = []">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="!showAll" class="flex justify-center">
@@ -304,6 +374,42 @@ const dateFilterLabel = computed(() => {
         <div class="mt-4">
           <button class="btn btn-sm" @click="showAll = true">Show All Data</button>
         </div>
+
+        <div v-if="filteredCategories.length > 0" class="py-6 text-center">
+          <div class="text-lg font-semibold">No time entires with this category filter:</div>
+          <div class="flex flex-col gap-2 mt-2">
+            <div v-for="c in filteredCategories" class="flex justify-center items-center gap-2">
+              <CategoryColor :category="c" :size="4" />
+              <div>
+                {{ c.name }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 text-sm text-base-content/70">
+            Select more categories in the filter or clear the filter to show more time entries.
+          </div>
+          <button class="btn btn-sm mt-2" @click="filteredCategories = []">Clear filter</button>
+        </div>
+      </div>
+      <div
+        v-else-if="timeEntries.length === 0 && filteredCategories.length > 0"
+        class="py-6 text-center"
+      >
+        <div class="text-lg font-semibold">No time entires with this category filter:</div>
+        <div class="flex flex-col gap-2 mt-2">
+          <div v-for="c in filteredCategories" class="flex justify-center items-center gap-2">
+            <CategoryColor :category="c" :size="4" />
+            <div>
+              {{ c.name }}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 text-sm text-base-content/70">
+          Select more categories in the filter or clear the filter to show more time entries.
+        </div>
+        <button class="btn btn-sm mt-2" @click="filteredCategories = []">Clear filter</button>
       </div>
 
       <template v-else-if="timeEntries.length > 0">
