@@ -300,7 +300,7 @@ function dueBadgeClass(dueLabel: string): string {
   if (!dueLabel) return ''
   if (dueLabel.startsWith('Overdue')) return 'badge-error'
   if (dueLabel === 'Due today') return 'badge-warning'
-  return 'badge-ghost'
+  return 'badge-soft'
 }
 
 function createdDateLabel(task: Task): string {
@@ -553,7 +553,7 @@ function confirmInsert() {
     <div class="text-center font-bold text-lg pt-7">Recently Created Tasks</div>
     <div class="text-center text-base-content/70">Click a task to insert fields into the form</div>
 
-    <div class="border border-base-300 bg-base-100 rounded-box p-6 mt-5 flex flex-col gap-2">
+    <div class="border border-base-300 bg-base-100 rounded-box p-6 mt-5 flex flex-col gap-3">
       <template v-if="sortedTaskList.length === 0">
         There are no recently created tasks, when there are you can insert them from here if you
         choose to.
@@ -562,7 +562,7 @@ function confirmInsert() {
         <div
           v-for="task in sortedTaskList"
           :key="task.id"
-          class="flex justify-between items-center bg-base-200 lg:bg-transparent hover:bg-base-300 hover:shadow rounded p-2 py-1 cursor-pointer"
+          class="flex justify-between items-center bg-base-200 shadow hover:bg-base-300 hover:shadow rounded p-2 py-1 cursor-pointer"
           @click="
             () => {
               selectedTask = task
@@ -594,7 +594,7 @@ function confirmInsert() {
             >
               <b>Due:</b> {{ task.dueDate.toDateString() }}
             </div>
-            <div class="badge badge-ghost badge-sm md:badge-md h-auto">
+            <div class="badge badge-soft badge-sm md:badge-md h-auto">
               {{ createdDateLabel(task) }}
             </div>
           </div>

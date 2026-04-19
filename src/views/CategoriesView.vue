@@ -223,7 +223,7 @@ const canConfirm = computed(() => !form.state.hasErrors)
           Select New Random Color
         </button>
 
-        <div class="flex flex-col gap-2 mt-4">
+        <div class="flex flex-col gap-3 mt-4">
           <div v-for="c in similarCurrentCategories" class="flex justify-between">
             <div class="flex gap-2">
               <CategoryColor :category="c.category" />

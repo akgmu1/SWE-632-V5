@@ -65,7 +65,7 @@ const dueBadgeClass = computed(() => {
   if (!dueLabel.value) return ''
   if (dueLabel.value.startsWith('Overdue')) return 'badge-error'
   if (dueLabel.value === 'Due today') return 'badge-warning'
-  return 'badge-ghost'
+  return 'badge-soft'
 })
 
 function onChange(checked: boolean) {
@@ -98,7 +98,7 @@ const subtaskProgress = computed(() => {
 
 <template>
   <div
-    class="align-center flex items-center justify-between gap-3 rounded p-2 py-1 bg-base-200 lg:bg-transparent"
+    class="align-center flex items-center justify-between gap-3 rounded p-2 py-1 bg-base-200 shadow"
     :class="{
       'cursor-pointer': props.isDeleted || (!props.isDeleted && !homeStateDefault),
       'hover:bg-base-300 hover:shadow':

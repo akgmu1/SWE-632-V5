@@ -303,7 +303,7 @@ const baseViewTitle = computed(() => {
         checked
       />
       <div class="tab-content border-base-300 bg-base-100 p-3">
-        <div v-if="activeTasks.length > 0" class="flex flex-col gap-2">
+        <div v-if="activeTasks.length > 0" class="flex flex-col gap-3">
           <TaskItem
             v-for="t in activeTasks"
             :key="t.id"
@@ -358,7 +358,7 @@ const baseViewTitle = computed(() => {
         :aria-label="`Completed (${completedTaskCount})`"
       />
       <div class="tab-content border-base-300 bg-base-100 p-3">
-        <div v-if="completedTasks.length > 0" class="flex flex-col gap-2">
+        <div v-if="completedTasks.length > 0" class="flex flex-col gap-3">
           <TaskItem
             v-for="task in completedTasks"
             :key="task.id"
@@ -420,7 +420,7 @@ const baseViewTitle = computed(() => {
             </button>
           </div>
 
-          <div v-if="filteredDeletedTasks.length > 0" class="flex flex-col gap-2">
+          <div v-if="filteredDeletedTasks.length > 0" class="flex flex-col gap-3">
             <TaskItem
               v-for="task in filteredDeletedTasks"
               :key="task.id"
