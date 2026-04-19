@@ -16,8 +16,6 @@ import {
   type Category,
 } from '@/schemas/category'
 import { taskManager } from '@/schemas/task'
-import { PencilIcon } from '@heroicons/vue/24/outline'
-import { TrashIcon } from '@heroicons/vue/24/solid'
 import { computed, nextTick, ref, type Ref } from 'vue'
 import BaseView from './BaseView.vue'
 
@@ -118,18 +116,21 @@ const canConfirm = computed(() => !form.state.hasErrors)
   <BaseView title="Manage Categories">
     <div
       v-if="categories.length > PERM_CATEGORIES.length"
-      class="flex flex-col gap-2 w-1/2 mx-auto"
+      class="border border-base-300 bg-base-100 rounded-box px-3 w-3/4 mx-auto"
     >
-      <div v-for="c in categories" :key="c.id">
-        <div v-if="!PERM_CATEGORIES.some((x) => x === c.id)" class="flex justify-between">
-          <div class="flex gap-2 align-middle">
-            <CategoryColor :category="c" />
-            <div>
-              {{ c.name }}
-            </div>
-            <ToolTip tip="Update">
+      <div class="flex flex-col gap-2 pt-0 pb-5">
+        <div v-for="c in categories" :key="c.id">
+          <div
+            v-if="!PERM_CATEGORIES.some((x) => x === c.id)"
+            class="bg-base-200 rounded shadow p-2 flex justify-between"
+          >
+            <div class="flex gap-2 items-center">
+              <CategoryColor :category="c" />
+              <div>
+                {{ c.name }}
+              </div>
               <button
-                class="btn btn-primary btn-xs"
+                class="btn btn-primary btn-xs ml-2"
                 @click="
                   () => {
                     selectedCategory = c
@@ -138,23 +139,23 @@ const canConfirm = computed(() => !form.state.hasErrors)
                   }
                 "
               >
-                <PencilIcon class="size-4" />
+                Edit
+              </button>
+            </div>
+            <ToolTip tip="Delete">
+              <button
+                class="btn btn-error btn-xs"
+                @click="
+                  () => {
+                    selectedCategory = c
+                    deleteModalRef?.showModal()
+                  }
+                "
+              >
+                Delete
               </button>
             </ToolTip>
           </div>
-          <ToolTip tip="Delete">
-            <button
-              class="btn btn-error btn-xs"
-              @click="
-                () => {
-                  selectedCategory = c
-                  deleteModalRef?.showModal()
-                }
-              "
-            >
-              <TrashIcon class="size-4" />
-            </button>
-          </ToolTip>
         </div>
       </div>
     </div>
@@ -167,7 +168,7 @@ const canConfirm = computed(() => !form.state.hasErrors)
 
     <ConfirmationModal
       ref="updateModalRef"
-      title="Update Category"
+      title="Edit Category"
       @confirm="updateCategory"
       :should-close="canConfirm"
       :positive="true"
@@ -194,7 +195,7 @@ const canConfirm = computed(() => !form.state.hasErrors)
           </div>
         </label>
       </div>
-      <div class="pt-2 flex gap-3">
+      <div class="pt-4 flex gap-3">
         <div>Click the color to change it:</div>
         <div>
           <ToolTip tip="Change Color">
@@ -222,7 +223,7 @@ const canConfirm = computed(() => !form.state.hasErrors)
           Select New Random Color
         </button>
 
-        <div class="flex flex-col gap-2 pt-2">
+        <div class="flex flex-col gap-2 mt-4">
           <div v-for="c in similarCurrentCategories" class="flex justify-between">
             <div class="flex gap-2">
               <CategoryColor :category="c.category" />
@@ -235,8 +236,8 @@ const canConfirm = computed(() => !form.state.hasErrors)
         </div>
       </div>
 
-      <div class="flex justify-center py-3">
-        <div v-if="form.state.hasErrors" class="alert alert-error min-w-max">
+      <div v-if="form.state.hasErrors" class="flex justify-center py-3">
+        <div class="alert alert-error min-w-max">
           <span>Please fix the errors above</span>
         </div>
       </div>
