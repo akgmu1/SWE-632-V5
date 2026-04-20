@@ -18,7 +18,7 @@ import {
   type TooltipCallbacks,
 } from 'chart.js'
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { Doughnut } from 'vue-chartjs'
+import { Doughnut, Bar } from 'vue-chartjs'
 import BaseView from './BaseView.vue'
 
 const selectedDate: Ref<Date> = ref(dateTrim(new Date()))
@@ -227,6 +227,21 @@ const chartData: ComputedRef<ChartData<'doughnut'>> = computed(() => {
   }
 })
 
+const taskRankingData: ComputedRef<ChartData<'bar'>> = computed(() => {
+  return {
+    labels: taskBreakdown.value.map((x) => x.task.title),
+    datasets: [
+      {
+        label: 'Hours Logged',
+        data: taskBreakdown.value.map((x) => Number((x.minutes / 60).toFixed(1))),
+        backgroundColor: '#4f46e5',
+        borderRadius: 6,
+        borderSkipped: false,
+      },
+    ],
+  }
+})
+
 const chartOptions = ref({
   responsive: true,
   maintainAspectRatio: false,
@@ -249,8 +264,44 @@ const chartOptions = ref({
   },
 })
 
-ChartJS.register(Title, Tooltip, Legend, ArcElement, BarElement, CategoryScale, LinearScale)
+const barOptions = ref({
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y' as const,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: function (context: any) {
+          return `${context.raw}h`
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      ticks: {
+        callback: function (value: string | number) {
+          return `${value}h`
+        },
+      },
+      grid: {
+        color: 'rgba(0,0,0,0.06)',
+      },
+    },
+    y: {
+      grid: {
+        display: false,
+      },
+    },
+  },
+})
 
+ChartJS.register(Title, Tooltip, Legend, ArcElement, BarElement, CategoryScale, LinearScale)
+const hasTasks = computed(() => taskManager.all().length > 0)
 const dateFilterLabel = computed(() => {
   if (showAll.value) return 'All Time'
   return selectedDate.value.toLocaleDateString()
@@ -259,34 +310,38 @@ const dateFilterLabel = computed(() => {
 
 <template>
   <BaseView title="Statistics">
-    <div class="space-y-6">
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
-          <div class="text-sm text-base-content/70">Total Time Logged</div>
-          <div class="mt-1 text-2xl font-semibold">{{ totalHoursLabel }}</div>
-          <div class="mt-1 text-xs text-base-content/60">{{ dateFilterLabel }}</div>
+    <div class="space-y-8">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div
+          class="rounded-2xl border-2 border-primary/30 bg-base-100 p-5 shadow-md xl:col-span-2"
+        >
+          <div class="text-sm font-medium uppercase tracking-wide text-base-content/60">
+            Total Time Logged
+          </div>
+          <div class="mt-2 text-4xl font-bold text-primary">{{ totalHoursLabel }}</div>
+          <div class="mt-2 text-sm text-base-content/60">{{ dateFilterLabel }}</div>
         </div>
 
         <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
           <div class="text-sm text-base-content/70">Tasks With Time Logged</div>
-          <div class="mt-1 text-2xl font-semibold">{{ loggedTaskCount }}</div>
+          <div class="mt-1 text-xl font-semibold">{{ loggedTaskCount }}</div>
           <div class="mt-1 text-xs text-base-content/60">Tasks included in this view</div>
         </div>
 
         <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
           <div class="text-sm text-base-content/70">Average Time Per Task</div>
-          <div class="mt-1 text-2xl font-semibold">{{ avgHoursPerTaskLabel }}</div>
+          <div class="mt-1 text-xl font-semibold">{{ avgHoursPerTaskLabel }}</div>
           <div class="mt-1 text-xs text-base-content/60">Based on logged tasks only</div>
         </div>
 
         <div class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
           <div class="text-sm text-base-content/70">Top Category</div>
-          <div class="mt-1 text-2xl font-semibold">{{ topCategory }}</div>
+          <div class="mt-1 text-xl font-semibold">{{ topCategory }}</div>
           <div class="mt-1 text-xs text-base-content/60">Most time logged</div>
         </div>
       </div>
 
-      <div class="flex justify-center items-center gap-2">
+      <div class="flex items-center justify-center gap-2">
         <div>
           <label class="label gap-2">
             <input type="checkbox" v-model="showAll" class="checkbox" />
@@ -301,8 +356,8 @@ const dateFilterLabel = computed(() => {
               class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
             >
               <div class="flex flex-col gap-2">
-                <template v-for="c in filterableCategories">
-                  <div class="flex justify-start items-center gap-1.5">
+                <template v-for="c in filterableCategories" :key="c.id">
+                  <div class="flex items-center justify-start gap-1.5">
                     <input
                       type="checkbox"
                       class="checkbox checkbox-sm"
@@ -319,9 +374,7 @@ const dateFilterLabel = computed(() => {
                       "
                     />
                     <CategoryColor :category="c" :size="4" />
-                    <div>
-                      {{ c.name }}
-                    </div>
+                    <div>{{ c.name }}</div>
                   </div>
                 </template>
               </div>
@@ -376,13 +429,15 @@ const dateFilterLabel = computed(() => {
         </div>
 
         <div v-if="filteredCategories.length > 0" class="py-6 text-center">
-          <div class="text-lg font-semibold">No time entires with this category filter:</div>
-          <div class="flex flex-col gap-2 mt-2">
-            <div v-for="c in filteredCategories" class="flex justify-center items-center gap-2">
+          <div class="text-lg font-semibold">No time entries with this category filter:</div>
+          <div class="mt-2 flex flex-col gap-2">
+            <div
+              v-for="c in filteredCategories"
+              :key="c.id"
+              class="flex items-center justify-center gap-2"
+            >
               <CategoryColor :category="c" :size="4" />
-              <div>
-                {{ c.name }}
-              </div>
+              <div>{{ c.name }}</div>
             </div>
           </div>
 
@@ -392,17 +447,20 @@ const dateFilterLabel = computed(() => {
           <button class="btn btn-sm mt-2" @click="filteredCategories = []">Clear filter</button>
         </div>
       </div>
+
       <div
         v-else-if="timeEntries.length === 0 && filteredCategories.length > 0"
         class="py-6 text-center"
       >
-        <div class="text-lg font-semibold">No time entires with this category filter:</div>
-        <div class="flex flex-col gap-2 mt-2">
-          <div v-for="c in filteredCategories" class="flex justify-center items-center gap-2">
+        <div class="text-lg font-semibold">No time entries with this category filter:</div>
+        <div class="mt-2 flex flex-col gap-2">
+          <div
+            v-for="c in filteredCategories"
+            :key="c.id"
+            class="flex items-center justify-center gap-2"
+          >
             <CategoryColor :category="c" :size="4" />
-            <div>
-              {{ c.name }}
-            </div>
+            <div>{{ c.name }}</div>
           </div>
         </div>
 
@@ -413,11 +471,11 @@ const dateFilterLabel = computed(() => {
       </div>
 
       <template v-else-if="timeEntries.length > 0">
-        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
-          <div class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-sm">
-            <div class="mb-4">
-              <div class="text-lg font-semibold">Category Breakdown</div>
-              <div class="text-sm text-base-content/70">See where your logged time is going.</div>
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+          <div class="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-md">
+            <div class="mb-5">
+              <div class="text-xl font-semibold">Category Breakdown</div>
+              <div class="text-sm text-base-content/60">See where your logged time is going.</div>
             </div>
 
             <div
@@ -460,8 +518,8 @@ const dateFilterLabel = computed(() => {
 
           <div class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-sm">
             <div class="mb-4">
-              <div class="text-lg font-semibold">Recent Time Entries</div>
-              <div class="text-sm text-base-content/70">
+              <div class="text-base font-semibold">Recent Time Entries</div>
+              <div class="text-sm text-base-content/60">
                 Most recent logs in the current filter.
               </div>
             </div>
@@ -501,53 +559,66 @@ const dateFilterLabel = computed(() => {
 
         <div class="rounded-xl border border-base-300 bg-base-100 p-5 shadow-sm">
           <div class="mb-4">
-            <div class="text-lg font-semibold">Task Breakdown</div>
+            <div class="text-lg font-semibold">Task Ranking by Hours Logged</div>
             <div class="text-sm text-base-content/70">
               Compare how much time each task has received.
             </div>
           </div>
 
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Task</th>
-                  <th>Category</th>
-                  <th class="text-right">Time Logged</th>
-                  <th class="text-right">% of Total</th>
-                  <th class="text-right">Entries</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in taskBreakdown" :key="item.task.id">
-                  <td class="font-medium">{{ item.task.title }}</td>
-                  <td>
-                    <div class="flex items-center gap-2">
-                      <CategoryColor v-if="item.category" :category="item.category" />
-                      <span>{{ item.category?.name ?? 'Unknown' }}</span>
-                    </div>
-                  </td>
-                  <td class="text-right">{{ minutesToHoursLabel(item.minutes) }}</td>
-                  <td class="text-right">{{ percentOfTotal(item.minutes) }}</td>
-                  <td class="text-right">{{ item.entryCount }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-if="taskBreakdown.length" class="h-80">
+            <Bar :data="taskRankingData" :options="barOptions" />
+          </div>
+
+          <div v-else class="text-sm text-base-content/70">
+            No task ranking data available in this filter.
           </div>
         </div>
       </template>
 
-      <div v-else class="rounded-xl border border-dashed border-base-300 bg-base-100 p-6">
-        <div class="text-lg font-semibold">No statistics available yet</div>
-        <div class="mt-2 text-sm text-base-content/70">
-          Start logging time on tasks to unlock category breakdowns, task totals, and recent entry
-          history.
-        </div>
-        <div class="mt-4 rounded-lg bg-base-200 p-4 text-sm text-base-content/70">
-          Tip: open a task and use <span class="font-semibold">Log Time</span> to add your first
-          entry.
-        </div>
-      </div>
+     <div
+  v-else
+  class="rounded-2xl border border-dashed border-base-300 bg-base-100 p-8 text-center shadow-sm"
+>
+  <div class="mb-3 text-4xl opacity-60">📊</div>
+
+  <div class="text-xl font-semibold">No statistics available yet</div>
+
+  <div v-if="!hasTasks" class="mt-2 text-sm text-base-content/70">
+    Create your first task to begin tracking time and viewing statistics.
+  </div>
+
+  <div v-else class="mt-2 text-sm text-base-content/70">
+    Log time on an existing task to start seeing insights and statistics.
+  </div>
+
+  <div class="mt-4 rounded-xl bg-base-200/70 p-4 text-sm text-base-content/70">
+    <template v-if="!hasTasks">
+      You need to create a task before you can log time and generate statistics.
+    </template>
+    <template v-else>
+      Open an existing task and use <span class="font-semibold">Log Time</span> to add your first
+      entry.
+    </template>
+  </div>
+
+  <div class="mt-5">
+    <button
+      v-if="!hasTasks"
+      class="btn btn-primary btn-sm"
+      @click="$router.push('/create')"
+    >
+      Create Task
+    </button>
+
+    <button
+      v-else
+      class="btn btn-primary btn-sm"
+      @click="$router.push('/edit')"
+    >
+      Go to Edit Task
+    </button>
+  </div>
+</div>
     </div>
   </BaseView>
 </template>

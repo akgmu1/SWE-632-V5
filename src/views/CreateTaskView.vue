@@ -335,271 +335,352 @@ function confirmInsert() {
 
 <template>
   <BaseView title="Create Task">
-    <div class="flex flex-col gap-4 w-1/2 mx-auto pb-4">
-      <div class="flex flex-col gap-4 sm:flex-row">
-        <div class="flex flex-col w-full">
-          <input
-            v-model="form.values.title"
-            @blur="form.touch('title')"
-            type="text"
-            placeholder="Title"
-            class="input-bordered input w-full"
-            :class="{
-              'input-error': form.touched.title && form.errors.title,
-            }"
-            @keyup.enter="onConfirm"
-          />
-
-          <label v-if="form.errors.title && form.touched.title" class="label">
-            <div class="label-text-alt text-error text-wrap">
-              {{ form.errors.title }}
+    <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-10 xl:gap-10">
+      <!-- Top content area -->
+      <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.9fr]">
+        <!-- Main form -->
+        <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm xl:p-8">
+          <div class="mb-6">
+            <div class="text-lg font-semibold">Create a New Task</div>
+            <div class="mt-1 text-sm text-base-content/60">
+              Fill out the task details, choose a category, and optionally add subtasks.
             </div>
-          </label>
+          </div>
+
+          <div class="space-y-6">
+            <!-- Task details -->
+            <section class="rounded-2xl bg-base-200/50 p-5">
+              <div class="mb-1 text-sm font-bold text-base-content">Task Details</div>
+              <div class="mb-4 text-sm text-base-content/60">
+                Start by entering the main task name.
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_220px]">
+                <div class="flex flex-col">
+                  <input
+                    v-model="form.values.title"
+                    @blur="form.touch('title')"
+                    type="text"
+                    placeholder="Task title"
+                    class="input-bordered input input-lg w-full bg-base-100"
+                    :class="{
+                      'input-error': form.touched.title && form.errors.title,
+                    }"
+                    @keyup.enter="onConfirm"
+                  />
+
+                  <label v-if="form.errors.title && form.touched.title" class="label pb-0">
+                    <div class="label-text-alt text-error text-wrap">
+                      {{ form.errors.title }}
+                    </div>
+                  </label>
+                </div>
+
+                <input
+                  type="date"
+                  :value="dateToYYYYMMDD(form.values.dueDate)"
+                  @input="
+                    form.values.dueDate = dateTrim(
+                      ($event.target as HTMLInputElement).valueAsDate ?? new Date(),
+                      true,
+                    )
+                  "
+                  class="input-bordered input input-sm w-full bg-base-100 self-center"
+                />
+              </div>
+            </section>
+
+            <!-- Category -->
+            <section class="rounded-2xl bg-base-200/50 p-5">
+              <div class="mb-4 text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                Category
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-11 w-11 items-center justify-center rounded-xl border border-base-300 bg-base-100"
+                >
+                  <CategoryColor :category="currentCategory" />
+                </div>
+
+                <select
+                  class="select-bordered select w-full bg-base-100"
+                  :value="form.values.selectedCategory"
+                  @change="onCategoryChange(Number(($event.target as HTMLSelectElement).value))"
+                >
+                  <option value="" disabled>Selected Category (optional)</option>
+                  <option v-for="c in categories" :key="c.id" :value="c.id">
+                    {{ c.id === META_ADD_NEW_CATEGORY ? '+ Add new category…' : c.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div v-if="isAddingNewCategory" class="mt-4 flex items-start gap-3">
+                <ToolTip tip="Change Color" :direction="ToolTipDirection.Top">
+                  <label
+                    class="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-base-300 bg-base-100"
+                  >
+                    <input type="color" v-model="form.values.newCategoryColor" class="sr-only" />
+                    <CategoryColor :color="form.values.newCategoryColor" />
+                  </label>
+                </ToolTip>
+
+                <div class="flex w-full flex-col">
+                  <input
+                    v-model="form.values.newCategoryName"
+                    @blur="form.touch('newCategoryName')"
+                    type="text"
+                    placeholder="New category name"
+                    class="input-bordered input w-full bg-base-100"
+                    :class="{
+                      'input-error': form.touched.newCategoryName && form.errors.newCategoryName,
+                    }"
+                    @keyup.enter="onConfirm"
+                  />
+
+                  <label
+                    v-if="form.errors.newCategoryName && form.touched.newCategoryName"
+                    class="label pb-0"
+                  >
+                    <div class="label-text-alt text-error text-wrap">
+                      {{ form.errors.newCategoryName }}
+                    </div>
+
+                    <template v-if="existingCategory !== undefined">
+                      <button
+                        class="btn btn-secondary btn-sm mt-2"
+                        @click="
+                          () => {
+                            form.values.selectedCategory = existingCategory!
+                            form.values.newCategoryName = ''
+                            form.errors.newCategoryName = ''
+                            existingCategory = undefined
+                          }
+                        "
+                      >
+                        Click to select that category
+                      </button>
+                    </template>
+                  </label>
+                </div>
+              </div>
+
+              <div
+                v-if="isAddingNewCategory && similarCurrentCategories.length > 0"
+                class="mt-4 rounded-2xl border border-warning/30 bg-warning/10 p-4"
+              >
+                <div class="mb-3 text-sm">
+                  <span class="font-bold">Warning:</span>
+                  The color selected is similar to another category's color. Selecting it can lower
+                  the user experience.
+                </div>
+
+                <button
+                  class="btn btn-outline btn-sm"
+                  @click="form.values.newCategoryColor = randomColor()"
+                >
+                  Select New Random Color
+                </button>
+
+                <div class="mt-4 flex flex-col gap-2">
+                  <div
+                    v-for="c in similarCurrentCategories"
+                    :key="c.category.id"
+                    class="flex items-center justify-between rounded-xl bg-base-100 px-3 py-2"
+                  >
+                    <div class="flex items-center gap-2">
+                      <CategoryColor :category="c.category" />
+                      <div>{{ c.category.name }}</div>
+                    </div>
+                    <div class="text-sm font-semibold">
+                      {{ Math.trunc(c.percent * 100) }}% similar
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Subtasks -->
+            <section class="rounded-2xl bg-base-200/50 p-5">
+              <div class="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+                    Subtasks
+                  </div>
+                  <div class="mt-1 text-sm text-base-content/60">
+                    Add smaller steps to help break this task down.
+                  </div>
+                </div>
+
+                <label class="flex cursor-pointer items-center gap-2 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    v-model="form.values.rememberOptions"
+                  />
+                  <span class="text-sm text-base-content/80">Remember Options</span>
+                </label>
+              </div>
+
+              <div v-if="tempSubtasks.length" class="mb-4 space-y-2">
+                <SortableList
+                  v-model="tempSubtasks"
+                  item-key="sortId"
+                  :options="{
+                    handle: '.handle',
+                  }"
+                  class="flex flex-col gap-2"
+                >
+                  <template #default="s">
+                    <div
+                      class="flex items-center justify-between rounded-2xl border border-base-300 bg-base-100 px-3 py-2 shadow-sm"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="handle flex cursor-grab items-center justify-center rounded-lg border border-primary/30 bg-primary/5 p-2 text-primary"
+                        >
+                          <ArrowsUpDownIcon class="size-4" />
+                        </div>
+                        <input
+                          type="checkbox"
+                          class="checkbox checkbox-sm"
+                          :checked="s.item.completed"
+                          @change="toggleSubtask(s.item, ($event.target as HTMLInputElement).checked)"
+                        />
+                        <div class="text-sm">{{ s.item.text }}</div>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="btn btn-error btn-xs"
+                        @click="removeTempSubtask(s.index)"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </template>
+                </SortableList>
+              </div>
+
+              <div class="flex gap-3">
+                <div class="flex-1">
+                  <input
+                    ref="subtaskTextRef"
+                    v-model="subtaskForm.values.newSubtaskText"
+                    class="input-bordered input w-full bg-base-100"
+                    placeholder="Add a subtask..."
+                    @keydown.enter.prevent="addTempSubtask"
+                    :class="{
+                      'input-error':
+                        subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText,
+                    }"
+                  />
+                  <label
+                    v-if="subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText"
+                    class="label pb-0"
+                  >
+                    <div class="label-text-alt text-error text-wrap">
+                      {{ subtaskForm.errors.newSubtaskText }}
+                    </div>
+                  </label>
+                </div>
+
+                <button
+                  ref="addSubtaskRef"
+                  type="button"
+                  class="btn btn-primary btn-outline min-w-24"
+                  @click="addTempSubtask"
+                >
+                  Add
+                </button>
+              </div>
+            </section>
+
+            <!-- Errors + actions -->
+            <div class="pt-2">
+              <div class="flex justify-center" v-if="form.state.hasErrors">
+                <div class="alert alert-error max-w-md">
+                  <span>Please fix the errors above</span>
+                </div>
+              </div>
+
+              <div class="mt-5 flex justify-center gap-4">
+                <button class="btn btn-outline min-w-28" @click="onCancel">Cancel</button>
+                <button ref="createButtonRef" class="btn btn-primary min-w-28" @click="onConfirm">
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <input
-          type="date"
-          :value="dateToYYYYMMDD(form.values.dueDate)"
-          @input="
-            form.values.dueDate = dateTrim(
-              ($event.target as HTMLInputElement).valueAsDate ?? new Date(),
-              true,
-            )
-          "
-          class="input-bordered input w-full"
-        />
-      </div>
-
-      <div class="flex items-center gap-3">
-        <CategoryColor :category="currentCategory" />
-
-        <select
-          class="select-bordered select w-full"
-          :value="form.values.selectedCategory"
-          @change="onCategoryChange(Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option value="" disabled>Selected Category (optional)</option>
-          <option v-for="c in categories" :key="c.id" :value="c.id">
-            {{ c.id === META_ADD_NEW_CATEGORY ? '+ Add new category…' : c.name }}
-          </option>
-        </select>
-      </div>
-
-      <div v-if="isAddingNewCategory" class="flex items-center gap-3">
-        <ToolTip tip="Change Color" :direction="ToolTipDirection.Top">
-          <label class="cursor-pointer">
-            <input type="color" v-model="form.values.newCategoryColor" class="sr-only" />
-            <CategoryColor :color="form.values.newCategoryColor" />
-          </label>
-        </ToolTip>
-        <div class="flex flex-col w-full">
-          <input
-            v-model="form.values.newCategoryName"
-            @blur="form.touch('newCategoryName')"
-            type="text"
-            placeholder="New category name"
-            class="input-bordered input w-full"
-            :class="{
-              'input-error': form.touched.newCategoryName && form.errors.newCategoryName,
-            }"
-            @keyup.enter="onConfirm"
-          />
-
-          <label v-if="form.errors.newCategoryName && form.touched.newCategoryName" class="label">
-            <div class="label-text-alt text-error text-wrap">
-              {{ form.errors.newCategoryName }}
+        <!-- Side panel -->
+        <div class="rounded-3xl border border-base-300 bg-base-100 p-6 shadow-sm xl:p-8">
+          <div class="mb-4">
+            <div class="text-lg font-semibold">Recently Created Tasks</div>
+            <div class="mt-1 text-sm text-base-content/60">
+              Click a task to insert its fields into the form.
             </div>
+          </div>
 
-            <template v-if="existingCategory !== undefined">
-              <button
-                class="btn btn-secondary btn-sm"
+          <div class="space-y-3">
+            <template v-if="sortedTaskList.length === 0">
+              <div
+                class="rounded-2xl border border-dashed border-base-300 bg-base-200/40 p-4 text-sm text-base-content/70"
+              >
+                There are no recently created tasks. When there are, you can insert them from here.
+              </div>
+            </template>
+
+            <template v-else>
+              <div
+                v-for="task in sortedTaskList"
+                :key="task.id"
+                class="cursor-pointer rounded-2xl border border-base-300 bg-base-200/50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:bg-base-200 hover:shadow"
                 @click="
                   () => {
-                    form.values.selectedCategory = existingCategory!
-                    form.values.newCategoryName = ''
-                    form.errors.newCategoryName = ''
-                    existingCategory = undefined
+                    selectedTask = task
+                    confirmInsertModalRef?.showModal()
                   }
                 "
               >
-                Click to select that category
-              </button>
-            </template>
-          </label>
-        </div>
-      </div>
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex items-start gap-3">
+                    <input
+                      class="checkbox checkbox-sm mt-1 pointer-events-none"
+                      type="checkbox"
+                      :checked="task.completed"
+                    />
 
-      <div
-        v-if="isAddingNewCategory && similarCurrentCategories.length > 0"
-        class="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
-      >
-        <div class="alert alert-warning">
-          <p>
-            <span class="font-bold">Warning:</span>
-            The color selected is similar to another category's color. Selecting it can result in a
-            lower user experience.
-          </p>
-        </div>
+                    <CategoryColor
+                      :category="categoryManager.findBy('id', task.category)"
+                      :size="4"
+                    />
 
-        <button class="btn btn-outline my-3" @click="form.values.newCategoryColor = randomColor()">
-          Select New Random Color
-        </button>
-
-        <div class="flex flex-col gap-2 pt-2">
-          <div v-for="c in similarCurrentCategories" class="flex justify-between">
-            <div class="flex gap-2">
-              <CategoryColor :category="c.category" />
-              <div>
-                {{ c.category.name }}
-              </div>
-            </div>
-            <div class="font-bold">{{ Math.trunc(c.percent * 100) }}% similar</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="text-left">
-        <div class="mb-2 font-semibold">Subtasks</div>
-
-        <div v-if="tempSubtasks.length" class="space-y-2">
-          <SortableList
-            v-model="tempSubtasks"
-            item-key="sortId"
-            :options="{
-              handle: '.handle',
-            }"
-            class="flex flex-col gap-2 border border-base-300 bg-base-100 rounded-box p-2"
-          >
-            <template #default="s">
-              <div class="flex justify-between bg-base-200 rounded shadow p-2">
-                <!-- Left Side -->
-                <div class="flex gap-2 items-center">
-                  <div class="handle cursor-grab border-primary border text-primary p-1 rounded">
-                    <ArrowsUpDownIcon class="size-5" />
+                    <div class="min-w-0">
+                      <div class="truncate font-medium">{{ task.title }}</div>
+                      <div class="mt-2">
+                        <div class="badge badge-outline badge-sm h-auto">
+                          {{ categoryManager.findBy('id', task.category)?.name }}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    class="checkbox"
-                    :checked="s.item.completed"
-                    @change="toggleSubtask(s.item, ($event.target as HTMLInputElement).checked)"
-                  />
-                  {{ s.item.text }}
-                </div>
 
-                <!-- Right side -->
-                <button
-                  type="button"
-                  class="btn btn-error btn-xs"
-                  @click="removeTempSubtask(s.index)"
-                >
-                  Remove
-                </button>
+                  <div class="flex flex-col items-end gap-2">
+                    <div class="badge badge-sm h-auto" :class="dueBadgeClass(dueDateLabel(task))">
+                      <b>Due:</b> {{ task.dueDate.toDateString() }}
+                    </div>
+                    <div class="badge badge-soft badge-sm h-auto">
+                      {{ createdDateLabel(task) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </template>
-          </SortableList>
-        </div>
-
-        <div class="flex flex-col">
-          <div class="mt-3 flex gap-2">
-            <input
-              ref="subtaskTextRef"
-              v-model="subtaskForm.values.newSubtaskText"
-              class="input-bordered input w-full"
-              placeholder="Add a subtask..."
-              @keydown.enter.prevent="addTempSubtask"
-              :class="{
-                'input-error':
-                  subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText,
-              }"
-            />
-            <button
-              ref="addSubtaskRef"
-              type="button"
-              class="btn btn-outline btn-primary"
-              @click="addTempSubtask"
-            >
-              Add
-            </button>
           </div>
         </div>
-        <label
-          v-if="subtaskForm.errors.newSubtaskText && subtaskForm.touched.newSubtaskText"
-          class="label"
-        >
-          <div class="label-text-alt text-error text-wrap">
-            {{ subtaskForm.errors.newSubtaskText }}
-          </div>
-        </label>
       </div>
-
-      <label class="flex cursor-pointer items-center gap-2">
-        <input type="checkbox" class="checkbox" v-model="form.values.rememberOptions" />
-        <span>Remember Options</span>
-      </label>
-    </div>
-
-    <div class="flex justify-center py-3">
-      <div v-if="form.state.hasErrors" class="alert alert-error min-w-max">
-        <span>Please fix the errors above</span>
-      </div>
-    </div>
-
-    <div class="flex justify-center">
-      <button class="btn btn-outline" @click="onCancel">Cancel</button>
-      <div class="px-4"></div>
-      <button ref="createButtonRef" class="btn btn-primary" @click="onConfirm">Create</button>
-    </div>
-
-    <div class="text-center font-bold text-lg pt-7">Recently Created Tasks</div>
-    <div class="text-center text-base-content/70">Click a task to insert fields into the form</div>
-
-    <div class="border border-base-300 bg-base-100 rounded-box p-6 mt-5 flex flex-col gap-3">
-      <template v-if="sortedTaskList.length === 0">
-        There are no recently created tasks, when there are you can insert them from here if you
-        choose to.
-      </template>
-      <template v-else>
-        <div
-          v-for="task in sortedTaskList"
-          :key="task.id"
-          class="flex justify-between items-center bg-base-200 shadow hover:bg-base-300 hover:shadow rounded p-2 py-1 cursor-pointer"
-          @click="
-            () => {
-              selectedTask = task
-              confirmInsertModalRef?.showModal()
-            }
-          "
-        >
-          <div class="flex gap-3 items-center">
-            <input
-              class="checkbox m-0 pointer-events-none"
-              type="checkbox"
-              :checked="task.completed"
-            />
-
-            <CategoryColor :category="categoryManager.findBy('id', task.category)" :size="4" />
-
-            <div class="flex flex-col gap-2">
-              <div class="truncate">Task: {{ task.title }}</div>
-              <div class="badge badge-outline badge-sm md:badge-md h-auto">
-                {{ categoryManager.findBy('id', task.category)?.name }}
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-2 flex-col lg:flex-row">
-            <div
-              class="badge badge-sm md:badge-md h-auto"
-              :class="dueBadgeClass(dueDateLabel(task))"
-            >
-              <b>Due:</b> {{ task.dueDate.toDateString() }}
-            </div>
-            <div class="badge badge-soft badge-sm md:badge-md h-auto">
-              {{ createdDateLabel(task) }}
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
   </BaseView>
 
